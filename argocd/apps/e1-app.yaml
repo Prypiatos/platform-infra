@@ -1,0 +1,75 @@
+# ============================================================
+# Argo CD Application — E1 Energy Edge Nodes
+#
+# What this file does:
+#   Registers the E1 team's repository with Argo CD so that
+#   whenever their code changes, Argo CD automatically pulls
+#   the latest Kubernetes manifests and applies them to the
+#   cluster. No manual kubectl apply needed.
+#
+# How to apply this file:
+#   kubectl apply -f argocd/apps/e1-app.yaml
+# ============================================================
+
+# apiVersion — which version of the Argo CD API spec to use
+apiVersion: argoproj.io/v1alpha1
+
+# kind — the type of Kubernetes resource this file describes
+# "Application" is an Argo CD custom resource (CRD)
+kind: Application
+
+# metadata — basic identifying information about this resource
+metadata:
+  # name — the unique name Argo CD uses to identify this application
+  name: e1-edge-nodes
+
+  # namespace — Argo CD always manages Application objects in its own namespace
+  namespace: argocd
+
+# spec — the main configuration: where to get code, where to deploy
+spec:
+
+  # project — which Argo CD project this app belongs to
+  # "default" is the built-in project that allows deploying anywhere
+  project: default
+
+  # source — tells Argo CD WHERE to find the Kubernetes manifests
+  source:
+    # repoURL — the GitHub repository that contains the K8s manifests
+    # E1 team: put your Kubernetes YAML files in the k8s/ folder of your repo
+    repoURL: https://github.com/Prypiatos/energy-edge-nodes.git
+
+    # targetRevision — which branch to track
+    # Argo CD will always deploy whatever is on the main branch
+    targetRevision: main
+
+    # path — which folder inside the repo contains the Kubernetes manifests
+    # Convention: Member 1 (K8s) should create a k8s/ folder in each repo
+    path: k8s
+
+  # destination — tells Argo CD WHERE to deploy (which cluster and namespace)
+  destination:
+    # server — the Kubernetes API server URL
+    # "https://kubernetes.default.svc" means the same cluster Argo CD runs on
+    server: https://kubernetes.default.svc
+
+    # namespace — the Kubernetes namespace to deploy E1 resources into
+    # This namespace will be created automatically (see syncOptions below)
+    namespace: e1-edge-nodes
+
+  # syncPolicy — controls HOW and WHEN Argo CD syncs changes
+  syncPolicy:
+
+    # automated — enables automatic sync without manual approval
+    automated:
+      # prune: true — if a resource is deleted from Git, delete it from K8s too
+      prune: true
+
+      # selfHeal: true — if someone manually changes K8s, Argo CD reverts it to Git state
+      selfHeal: true
+
+    # syncOptions — extra options for the sync process
+    syncOptions:
+      # CreateNamespace=true — automatically create the namespace if it doesn't exist
+      # Without this, the sync would fail if e1-edge-nodes namespace is missing
+      - CreateNamespace=true

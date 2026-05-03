@@ -1,0 +1,74 @@
+# ============================================================
+# Argo CD Application — E3 EMS App
+#
+# What this file does:
+#   Registers the E3 team's repository with Argo CD so that
+#   whenever their code changes, Argo CD automatically pulls
+#   the latest Kubernetes manifests and applies them to the
+#   cluster. Covers: Go backend (port 8080), Next.js frontend,
+#   PostgreSQL metadata database, and Kong API Gateway.
+#
+# How to apply this file:
+#   kubectl apply -f argocd/apps/e3-app.yaml
+# ============================================================
+
+# apiVersion — which version of the Argo CD API spec to use
+apiVersion: argoproj.io/v1alpha1
+
+# kind — the type of Kubernetes resource this file describes
+kind: Application
+
+# metadata — basic identifying information about this resource
+metadata:
+  # name — the unique name Argo CD uses to identify this application
+  name: e3-ems-app
+
+  # namespace — Argo CD Application objects always live in the argocd namespace
+  namespace: argocd
+
+# spec — the main configuration: where to get code, where to deploy
+spec:
+
+  # project — "default" allows deploying to any namespace in the cluster
+  project: default
+
+  # source — tells Argo CD WHERE to find the Kubernetes manifests
+  source:
+    # repoURL — the E3 team's GitHub repository
+    repoURL: https://github.com/Prypiatos/ems-app.git
+
+    # targetRevision — always deploy from the main branch
+    targetRevision: main
+
+    # path — folder inside the repo that contains Kubernetes YAML files
+    # E3 currently has docker-compose.yml but NOT Kubernetes manifests yet.
+    # Member 1 (Kubernetes setup) should create a k8s/ folder in the ems-app
+    # repo with Deployment, Service, and Ingress YAML files for:
+    #   - Go backend
+    #   - Next.js frontend
+    #   - PostgreSQL
+    path: k8s
+
+  # destination — WHERE to deploy on the Kubernetes cluster
+  destination:
+    # server — deploy to the same cluster Argo CD is installed on
+    server: https://kubernetes.default.svc
+
+    # namespace — all E3 resources go into this dedicated namespace
+    namespace: e3-ems-app
+
+  # syncPolicy — automatic deployment settings
+  syncPolicy:
+
+    # automated — Argo CD syncs changes automatically without any manual step
+    automated:
+      # prune — remove K8s resources that were deleted from Git
+      prune: true
+
+      # selfHeal — revert any manual K8s changes back to what Git says
+      selfHeal: true
+
+    # syncOptions — additional sync behaviour
+    syncOptions:
+      # CreateNamespace — create e3-ems-app namespace if it doesn't exist
+      - CreateNamespace=true

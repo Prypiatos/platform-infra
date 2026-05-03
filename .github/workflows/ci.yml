@@ -1,0 +1,132 @@
+# ============================================================
+# CI/CD Pipeline for platform-infra (E4 Subgroup)
+# This file tells GitHub Actions what to do automatically
+# every time someone pushes code or opens a pull request.
+# ============================================================
+
+# The name that appears in the GitHub Actions tab
+name: Platform Infrastructure CI
+
+# ---- TRIGGERS -----------------------------------------------
+# "on" defines WHEN this pipeline runs
+on:
+  push:
+    branches:
+      - main   # Run whenever code is pushed directly to main
+  pull_request:
+    branches:
+      - main   # Run whenever a pull request targets the main branch
+
+# ---- JOBS ---------------------------------------------------
+# A "job" is a group of steps that run together on one machine.
+# Jobs here run in sequence (each "needs" the previous one).
+jobs:
+
+  # ============================================================
+  # JOB 1: Validate YAML Files
+  # Purpose: Make sure every .yml / .yaml file in the repo
+  # is valid YAML — catches typos and formatting errors early.
+  # ============================================================
+  validate-yaml:
+    name: Validate YAML Files        # Label shown in GitHub UI
+    runs-on: ubuntu-latest           # Use a fresh Ubuntu Linux machine
+
+    steps:
+      # Step 1 — Download the repository code onto the runner machine
+      - name: Checkout repository code
+        uses: actions/checkout@v3    # Official GitHub action to clone the repo
+
+      # Step 2 — Install yamllint, a tool that checks YAML file syntax
+      - name: Install yamllint
+        run: pip install yamllint    # pip is Python's package installer, available on ubuntu-latest
+
+      # Step 3 — Run yamllint on ALL yaml files in the repo
+      # "-d relaxed" uses a forgiving rule set (allows long lines, etc.)
+      # "." means scan the current directory and everything inside it
+      - name: Lint all YAML files in the repository
+        run: yamllint -d relaxed .
+
+  # ============================================================
+  # JOB 2: Security Scan with Trivy
+  # Purpose: Scan the entire codebase for known security
+  # vulnerabilities in files, configs, and dependencies.
+  # Trivy is an open-source tool by Aqua Security.
+  # ============================================================
+  security-scan:
+    name: Trivy Security Scan        # Label shown in GitHub UI
+    runs-on: ubuntu-latest           # Use a fresh Ubuntu Linux machine
+    needs: validate-yaml             # Only run AFTER job 1 passes
+
+    steps:
+      # Step 1 — Download the repository code onto the runner machine
+      - name: Checkout repository code
+        uses: actions/checkout@v3    # Always checkout before scanning
+
+      # Step 2 — Run Trivy to scan the whole repo for vulnerabilities
+      - name: Run Trivy vulnerability scanner on the repository
+        uses: aquasecurity/trivy-action@master   # Official Trivy GitHub Action
+        with:
+          scan-type: 'fs'            # 'fs' = filesystem scan (scans files, not a Docker image)
+          scan-ref: '.'              # '.' = scan starting from the root of the repo
+          format: 'table'            # Output results as a human-readable table
+          exit-code: '0'             # '0' = do NOT fail the pipeline if vulnerabilities are found
+                                     # Change to '1' later when you want strict enforcement
+
+  # ============================================================
+  # JOB 3: Argo CD Sync (PLACEHOLDER)
+  # Purpose: After tests and scans pass, tell Argo CD to pull
+  # the latest changes and deploy them to Kubernetes.
+  #
+  # THIS JOB IS A PLACEHOLDER — the real sync command is
+  # commented out below. Uncomment it once:
+  #   1. The Kubernetes cluster is set up (Member 1)
+  #   2. Argo CD is installed on the cluster
+  #   3. GitHub Secrets ARGOCD_SERVER and ARGOCD_TOKEN are added
+  #      (Settings → Secrets and variables → Actions → New secret)
+  # ============================================================
+  argocd-sync:
+    name: Argo CD Sync               # Label shown in GitHub UI
+    runs-on: ubuntu-latest           # Use a fresh Ubuntu Linux machine
+    needs: security-scan             # Only run AFTER job 2 passes
+
+    steps:
+      # Step 1 — Download the repository code onto the runner machine
+      - name: Checkout repository code
+        uses: actions/checkout@v3
+
+      # Step 2 — Install the Argo CD CLI tool so we can run argocd commands
+      # PLACEHOLDER: Uncomment this step when Argo CD is ready
+      # - name: Install Argo CD CLI
+      #   run: |
+      #     # Download the argocd binary from the official GitHub release
+      #     curl -sSL -o /usr/local/bin/argocd \
+      #       https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+      #     # Make the binary executable
+      #     chmod +x /usr/local/bin/argocd
+
+      # Step 3 — Log in to Argo CD server and trigger a sync
+      # PLACEHOLDER: Uncomment this step when Argo CD is ready
+      # - name: Log in to Argo CD and sync e4-platform application
+      #   run: |
+      #     # Log in to the Argo CD server using secrets stored in GitHub
+      #     # ARGOCD_SERVER = the URL of your Argo CD server (e.g. argocd.example.com)
+      #     # ARGOCD_TOKEN  = an Argo CD API token (created in Argo CD UI → Settings → Accounts)
+      #     argocd login ${{ secrets.ARGOCD_SERVER }} \
+      #       --auth-token ${{ secrets.ARGOCD_TOKEN }} \
+      #       --insecure      # Remove --insecure if you have a valid TLS certificate
+      #
+      #     # Tell Argo CD to pull the latest version and apply it to Kubernetes
+      #     argocd app sync e4-platform --server ${{ secrets.ARGOCD_SERVER }}
+
+      # TEMPORARY placeholder step so the job does not fail while Argo CD is not yet set up
+      - name: Placeholder — Argo CD sync will run here once cluster is ready
+        run: |
+          echo "=========================================="
+          echo " Argo CD sync step is not active yet."
+          echo " Uncomment the steps above once:"
+          echo "   1. Kubernetes cluster is running"
+          echo "   2. Argo CD is installed on the cluster"
+          echo "   3. GitHub Secrets are configured:"
+          echo "      - ARGOCD_SERVER (Argo CD server URL)"
+          echo "      - ARGOCD_TOKEN  (Argo CD API token)"
+          echo "=========================================="
