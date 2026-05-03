@@ -1,6 +1,6 @@
 # platform-infra — E4 Platform & Infrastructure Repository
 
-> **E4 Subgroup** | Member 2 — CI/CD Pipeline (GitHub Actions + Argo CD)
+> **E4 Subgroup**
 >
 > This repository is the **central hub** for the Energy Management System's deployment infrastructure.
 > It does not contain application code — instead it contains the automation and configuration
@@ -214,12 +214,3 @@ kubectl apply -f argocd/apps/e4-app.yaml
 
 ---
 
-## Team Members — E4 Subgroup
-
-| Member | Responsibility |
-|--------|---------------|
-| Member 1 | Docker & Kubernetes setup |
-| **Member 2 (you)** | **CI/CD Pipelines (GitHub Actions + Argo CD)** |
-| Member 3 | Monitoring (Prometheus, Grafana, ELK) |
-| Member 4 | API Gateway & Security Scanning (Kong, Trivy, OWASP ZAP) |
-| Member 5 | Authentication (Keycloak, Vault) |
