@@ -38,7 +38,8 @@ cp terraform.tfvars.example terraform.tfvars
 Defaults:
 
 - `aws_region = "ap-southeast-1"` for Singapore
-- `instance_type = "t3.small"`
+- `control_plane_instance_type = "t3.medium"`
+- `worker_instance_type = "t3.large"`
 
 Set:
 

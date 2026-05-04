@@ -23,13 +23,16 @@ locals {
   # We keep the node definitions in one place so the instance resource stays simple.
   cluster_nodes = {
     control-plane = {
-      role = "control-plane"
+      role          = "control-plane"
+      instance_type = var.control_plane_instance_type
     }
     worker-1 = {
-      role = "worker"
+      role          = "worker"
+      instance_type = var.worker_instance_type
     }
     worker-2 = {
-      role = "worker"
+      role          = "worker"
+      instance_type = var.worker_instance_type
     }
   }
 
@@ -164,7 +167,7 @@ resource "aws_instance" "nodes" {
   for_each = local.cluster_nodes
 
   ami                         = data.aws_ami.ubuntu_2204.id
-  instance_type               = var.instance_type
+  instance_type               = each.value.instance_type
   key_name                    = var.key_pair_name
   subnet_id                   = local.default_subnet_id
   vpc_security_group_ids      = [aws_security_group.k3s_cluster.id]
