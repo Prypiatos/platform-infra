@@ -1,0 +1,150 @@
+---
+# Play 1: Prepare all nodes before k3s installation.
+- name: Prepare all cluster nodes
+  hosts: k3s_cluster
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    # Refresh the apt package index so package operations use current metadata.
+    - name: Update apt package cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    # Install curl because the official k3s installer uses it.
+    - name: Ensure curl is installed
+      ansible.builtin.apt:
+        name: curl
+        state: present
+
+    # Upgrade installed packages to reduce the chance of old package issues.
+    - name: Upgrade installed apt packages
+      ansible.builtin.apt:
+        upgrade: yes
+
+    # k3s requires swap to be disabled. This turns it off immediately if active.
+    - name: Disable swap right now when it is enabled
+      ansible.builtin.command: swapoff -a
+      when: ansible_swaptotal_mb | int > 0
+      changed_when: ansible_swaptotal_mb | int > 0
+
+    # This comments out active swap lines in /etc/fstab so swap stays disabled
+    # after the instance is rebooted.
+    - name: Disable swap permanently in /etc/fstab
+      ansible.builtin.replace:
+        path: /etc/fstab
+        regexp: '^(?!#)(.+\s+swap\s+.+)$'
+        replace: '# \1'
+
+# Play 2: Install k3s on the control-plane node and read the join token.
+- name: Install k3s control-plane
+  hosts: control_plane
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    # Read the current systemd service list so we can skip reinstallation when
+    # k3s is already present.
+    - name: Gather service facts on the control-plane
+      ansible.builtin.service_facts:
+
+    # External kubectl access usually targets the control-plane Elastic IP.
+    # Without --tls-san, the API server certificate may not include that IP,
+    # which causes x509 certificate validation errors from outside the cluster.
+    - name: Ensure the control-plane Elastic IP variable is set
+      ansible.builtin.assert:
+        that:
+          - control_plane_elastic_ip is defined
+          - control_plane_elastic_ip | length > 0
+          - control_plane_elastic_ip != "CONTROL_PLANE_ELASTIC_IP"
+        fail_msg: "Set control_plane_elastic_ip for the control-plane host in ansible/inventory.ini before running this playbook."
+
+    # Install the k3s server only if the k3s systemd service does not exist yet.
+    # The --tls-san flag adds the Elastic IP to the API server certificate so
+    # kubectl from your laptop can trust the server when connecting externally.
+    - name: Install k3s server using the official installer
+      ansible.builtin.shell: curl -sfL https://get.k3s.io | sh -s - server --tls-san {{ control_plane_elastic_ip }}
+      args:
+        executable: /bin/bash
+      when: "'k3s.service' not in ansible_facts.services"
+
+    # Make sure the service is enabled and running even on repeat playbook runs.
+    - name: Ensure the k3s server service is enabled and started
+      ansible.builtin.systemd:
+        name: k3s
+        enabled: yes
+        state: started
+
+    # Wait until the server has created the node token file.
+    - name: Wait for the control-plane node token file
+      ansible.builtin.wait_for:
+        path: /var/lib/rancher/k3s/server/node-token
+        timeout: 120
+
+    # Read the token file so workers can use it to join the cluster.
+    - name: Read the control-plane node token
+      ansible.builtin.slurp:
+        src: /var/lib/rancher/k3s/server/node-token
+      register: control_plane_token_file
+
+    # Save the decoded token as a host fact that workers can access through
+    # hostvars during the join step.
+    - name: Expose the control-plane node token as an Ansible fact
+      ansible.builtin.set_fact:
+        k3s_node_token: "{{ control_plane_token_file.content | b64decode | trim }}"
+
+# Play 3: Install k3s agents on the worker nodes and join them to the cluster.
+- name: Join worker nodes to the k3s cluster
+  hosts: workers
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    # Read the current service list so the worker install remains idempotent.
+    - name: Gather service facts on each worker
+      ansible.builtin.service_facts:
+
+    # Install the k3s agent only if it is not already installed.
+    # The token is pulled dynamically from the control-plane host with hostvars.
+    - name: Install k3s agent and join the cluster
+      ansible.builtin.shell: curl -sfL https://get.k3s.io | sh -
+      args:
+        executable: /bin/bash
+      environment:
+        K3S_URL: "https://{{ hostvars[groups['control_plane'][0]].k3s_api_ip | default(hostvars[groups['control_plane'][0]].ansible_host) }}:6443"
+        K3S_TOKEN: "{{ hostvars[groups['control_plane'][0]].k3s_node_token }}"
+      when: "'k3s-agent.service' not in ansible_facts.services"
+
+    # Make sure the worker agent service stays enabled and running.
+    - name: Ensure the k3s agent service is enabled and started
+      ansible.builtin.systemd:
+        name: k3s-agent
+        enabled: yes
+        state: started
+
+# Play 4: Show the final cluster result from the control-plane node.
+- name: Show final cluster status
+  hosts: control_plane
+  become: yes
+  gather_facts: no
+
+  tasks:
+    # Wait until all expected nodes appear in the cluster before printing
+    # the result. This makes the final output more useful after fresh installs.
+    - name: Wait until all nodes have joined the cluster
+      ansible.builtin.command: /usr/local/bin/k3s kubectl get nodes --no-headers
+      register: cluster_nodes
+      changed_when: false
+      retries: 18
+      delay: 10
+      until: cluster_nodes.stdout_lines | length >= (groups['control_plane'] | length + groups['workers'] | length)
+
+    # Print the cluster status in the Ansible output.
+    - name: Show the current k3s cluster status
+      ansible.builtin.debug:
+        msg:
+          - "k3s cluster installation is complete."
+          - "Current cluster nodes:"
+          - "{{ cluster_nodes.stdout }}"
+          - "Verification command: kubectl get nodes"
