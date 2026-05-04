@@ -1,0 +1,29 @@
+# ============================================================
+# ingress-nginx Service patch
+#
+# What this file does:
+#   Forces the ingress-nginx controller Service to use
+#   externalTrafficPolicy: Cluster.
+#
+# Why this matters on our AWS k3s setup:
+#   The Elastic IP is attached to the control-plane EC2 instance, but the
+#   ingress-nginx pods may run on worker nodes instead. With NodePort traffic,
+#   externalTrafficPolicy: Cluster allows kube-proxy to forward requests that
+#   land on the control-plane node to ingress pods running on other nodes.
+#
+#   If externalTrafficPolicy were Local, traffic sent to the Elastic IP could
+#   fail whenever no ingress-nginx pod is running on the control-plane node.
+#
+# How to apply:
+#   kubectl apply -f k8s/ingress/ingress-nginx-controller-service.yaml
+# ============================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+spec:
+  # Cluster mode lets the node that receives the Elastic IP / NodePort traffic
+  # forward it to ready ingress pods on any cluster node.
+  externalTrafficPolicy: Cluster

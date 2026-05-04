@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hivemq
+  namespace: mqtt
+  labels:
+    app.kubernetes.io/name: hivemq
+    app.kubernetes.io/part-of: mqtt
+spec:
+  replicas: 1
+
+  # A single broker replica matches the current compose setup.
+  # Recreate avoids two pods trying to use the same writable volumes at once.
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hivemq
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hivemq
+        app.kubernetes.io/part-of: mqtt
+    spec:
+      containers:
+        - name: hivemq
+          image: hivemq/hivemq-ce:latest
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: mqtt
+              containerPort: 1883
+              protocol: TCP
+            - name: web-ui
+              containerPort: 8080
+              protocol: TCP
+
+          volumeMounts:
+            - name: hivemq-data
+              mountPath: /opt/hivemq/data
+            - name: hivemq-log
+              mountPath: /opt/hivemq/log
+
+          # Basic TCP probes are enough for a beginner-friendly first deployment.
+          readinessProbe:
+            tcpSocket:
+              port: mqtt
+            initialDelaySeconds: 15
+            periodSeconds: 10
+
+          livenessProbe:
+            tcpSocket:
+              port: mqtt
+            initialDelaySeconds: 30
+            periodSeconds: 20
+
+      volumes:
+        - name: hivemq-data
+          persistentVolumeClaim:
+            claimName: hivemq-data
+        - name: hivemq-log
+          persistentVolumeClaim:
+            claimName: hivemq-log

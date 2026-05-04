@@ -1,0 +1,8 @@
+# Namespace for the MQTT broker resources.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mqtt
+  labels:
+    app.kubernetes.io/name: hivemq
+    app.kubernetes.io/part-of: mqtt
