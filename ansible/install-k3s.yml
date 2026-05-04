@@ -26,8 +26,8 @@
     # k3s requires swap to be disabled. This turns it off immediately if active.
     - name: Disable swap right now when it is enabled
       ansible.builtin.command: swapoff -a
-      when: ansible_swaptotal_mb | int > 0
-      changed_when: ansible_swaptotal_mb | int > 0
+      when: ansible_facts['swaptotal_mb'] | int > 0
+      changed_when: ansible_facts['swaptotal_mb'] | int > 0
 
     # This comments out active swap lines in /etc/fstab so swap stays disabled
     # after the instance is rebooted.
@@ -68,6 +68,53 @@
       args:
         executable: /bin/bash
       when: "'k3s.service' not in ansible_facts.services"
+
+    # Fresh installs get --tls-san from the installer command above, but already
+    # running clusters need a persistent config entry so future restarts keep the
+    # Elastic IP in the API server certificate.
+    - name: Ensure the k3s config directory exists
+      ansible.builtin.file:
+        path: /etc/rancher/k3s
+        state: directory
+        mode: "0755"
+
+    # External kubectl clients usually connect to the control-plane Elastic IP.
+    # Adding that IP as a TLS SAN prevents x509 certificate errors when your
+    # laptop verifies the API server certificate over HTTPS.
+    - name: Persist the Elastic IP in the k3s server config
+      ansible.builtin.blockinfile:
+        path: /etc/rancher/k3s/config.yaml
+        create: true
+        mode: "0644"
+        marker: "# {mark} ANSIBLE MANAGED K3S TLS SAN"
+        block: |
+          tls-san:
+            - "{{ control_plane_elastic_ip }}"
+      register: control_plane_tls_san_config
+
+    # When the TLS SAN config changes on an existing cluster, rotate the API
+    # server certificate so the new Elastic IP is included immediately.
+    - name: Stop k3s before rotating the API server certificate
+      ansible.builtin.systemd:
+        name: k3s
+        state: stopped
+      when:
+        - "'k3s.service' in ansible_facts.services"
+        - control_plane_tls_san_config.changed
+
+    - name: Rotate the API server certificate to include the Elastic IP SAN
+      ansible.builtin.command: /usr/local/bin/k3s certificate rotate --service api-server
+      when:
+        - "'k3s.service' in ansible_facts.services"
+        - control_plane_tls_san_config.changed
+
+    - name: Start k3s after the API server certificate rotation
+      ansible.builtin.systemd:
+        name: k3s
+        state: started
+      when:
+        - "'k3s.service' in ansible_facts.services"
+        - control_plane_tls_san_config.changed
 
     # Make sure the service is enabled and running even on repeat playbook runs.
     - name: Ensure the k3s server service is enabled and started
