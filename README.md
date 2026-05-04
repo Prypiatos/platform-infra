@@ -213,4 +213,3 @@ kubectl apply -f argocd/apps/e4-app.yaml
 ```
 
 ---
-
