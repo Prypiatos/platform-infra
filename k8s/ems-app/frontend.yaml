@@ -35,7 +35,7 @@ spec:
       containers:
         - name: ems-frontend
           # Replace with your image pushed to a registry (e.g. myregistry/myfront:latest)
-          image: sheharakarunarathna/myfront:latest
+          image: sheharakarunarathna/frontend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
