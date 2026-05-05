@@ -31,10 +31,8 @@ spec:
     spec:
       containers:
         - name: ems-backend
-          # Replace with the image pushed by CI/CD, for example:
-          # dockerhub-username/backend:latest or ghcr.io/owner/backend:latest
-          image: sheharakarunarathna/backend:latest
-          imagePullPolicy: IfNotPresent
+          image: sheharakarunarathna/backend   # ❗ no tag here
+          imagePullPolicy: Always              # safer for now
           ports:
             - containerPort: 8080
           env:
