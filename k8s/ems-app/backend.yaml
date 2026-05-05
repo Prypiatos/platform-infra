@@ -30,9 +30,10 @@ spec:
         app: ems-backend
     spec:
       containers:
-        - name: sheharakarunarathna/ems-backend
-          # Replace with your image pushed to a registry (e.g. myregistry/myback:latest)
-          image: myback:latest
+        - name: ems-backend
+          # Replace with the image pushed by CI/CD, for example:
+          # dockerhub-username/backend:latest or ghcr.io/owner/backend:latest
+          image: sheharakarunarathna/backend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
