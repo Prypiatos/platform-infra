@@ -5,6 +5,7 @@ resources:
 - namespace.yaml
 - backend.yaml
 - frontend.yaml
+- kong.yaml
 images:
 - name: sheharakarunarathna/backend
   newName: sheharakarunarathna/backend
@@ -12,3 +13,6 @@ images:
 - name: sheharakarunarathna/frontend
   newName: sheharakarunarathna/frontend
   newTag: b0afa5229084d71964324bdf97c575fdab725238
+- name: sheharakarunarathna/kong
+  newName: sheharakarunarathna/kong
+  newTag: latest
