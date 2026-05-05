@@ -30,7 +30,7 @@ spec:
         app: ems-backend
     spec:
       containers:
-        - name: ems-backend
+        - name: sheharakarunarathna/ems-backend
           # Replace with your image pushed to a registry (e.g. myregistry/myback:latest)
           image: myback:latest
           imagePullPolicy: IfNotPresent
