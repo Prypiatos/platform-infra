@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - broker
   - ems-app
+  - kong
