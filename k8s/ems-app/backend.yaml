@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
         - name: ems-backend
-          image: sheharakarunarathna/backend   # ❗ no tag here
+          image: sheharakarunarathna/backend:e40962cf5ce40ec828c314ee46bd34384ac13f20  # ❗ no tag here
           imagePullPolicy: Always              # safer for now
           ports:
             - containerPort: 8080
