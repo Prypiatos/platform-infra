@@ -9,3 +9,6 @@ images:
 - name: sheharakarunarathna/backend
   newName: sheharakarunarathna/backend
   newTag: 79b987e5db5f5d2020d27d15f7fbf3bec856860d
+- name: sheharakarunarathna/frontend
+  newName: sheharakarunarathna/frontend
+  newTag: b0afa5229084d71964324bdf97c575fdab725238
