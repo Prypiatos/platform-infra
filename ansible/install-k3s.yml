@@ -58,13 +58,17 @@
           - control_plane_elastic_ip is defined
           - control_plane_elastic_ip | length > 0
           - control_plane_elastic_ip != "CONTROL_PLANE_ELASTIC_IP"
-        fail_msg: "Set control_plane_elastic_ip for the control-plane host in ansible/inventory.ini before running this playbook."
+        fail_msg: |
+          Set control_plane_elastic_ip for the control-plane host in
+          ansible/inventory.ini before running this playbook.
 
     # Install the k3s server only if the k3s systemd service does not exist yet.
     # The --tls-san flag adds the Elastic IP to the API server certificate so
     # kubectl from your laptop can trust the server when connecting externally.
     - name: Install k3s server using the official installer
-      ansible.builtin.shell: curl -sfL https://get.k3s.io | sh -s - server --tls-san {{ control_plane_elastic_ip }}
+      ansible.builtin.shell: |
+        curl -sfL https://get.k3s.io | sh -s - server \
+          --tls-san {{ control_plane_elastic_ip }}
       args:
         executable: /bin/bash
       when: "'k3s.service' not in ansible_facts.services"
@@ -159,8 +163,11 @@
       args:
         executable: /bin/bash
       environment:
-        K3S_URL: "https://{{ hostvars[groups['control_plane'][0]].k3s_api_ip | default(hostvars[groups['control_plane'][0]].ansible_host) }}:6443"
-        K3S_TOKEN: "{{ hostvars[groups['control_plane'][0]].k3s_node_token }}"
+        K3S_URL: |
+          https://{{ hostvars[groups['control_plane'][0]].k3s_api_ip
+          | default(hostvars[groups['control_plane'][0]].ansible_host) }}:6443
+        K3S_TOKEN: >
+          {{ hostvars[groups['control_plane'][0]].k3s_node_token }}
       when: "'k3s-agent.service' not in ansible_facts.services"
 
     # Make sure the worker agent service stays enabled and running.
@@ -185,7 +192,9 @@
       changed_when: false
       retries: 18
       delay: 10
-      until: cluster_nodes.stdout_lines | length >= (groups['control_plane'] | length + groups['workers'] | length)
+      until: >
+        cluster_nodes.stdout_lines | length >=
+        (groups['control_plane'] | length + groups['workers'] | length)
 
     # Print the cluster status in the Ansible output.
     - name: Show the current k3s cluster status

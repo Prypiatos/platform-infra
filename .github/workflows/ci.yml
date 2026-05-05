@@ -34,15 +34,13 @@ jobs:
     steps:
       # Step 1 — Download the repository code onto the runner machine
       - name: Checkout repository code
-        uses: actions/checkout@v3    # Official GitHub action to clone the repo
+        uses: actions/checkout@v4
 
       # Step 2 — Install yamllint, a tool that checks YAML file syntax
       - name: Install yamllint
-        run: pip install yamllint    # pip is Python's package installer, available on ubuntu-latest
+        run: pip install yamllint
 
       # Step 3 — Run yamllint on ALL yaml files in the repo
-      # "-d relaxed" uses a forgiving rule set (allows long lines, etc.)
-      # "." means scan the current directory and everything inside it
       - name: Lint all YAML files in the repository
         run: yamllint -d relaxed .
 
@@ -60,17 +58,16 @@ jobs:
     steps:
       # Step 1 — Download the repository code onto the runner machine
       - name: Checkout repository code
-        uses: actions/checkout@v3    # Always checkout before scanning
+        uses: actions/checkout@v4
 
       # Step 2 — Run Trivy to scan the whole repo for vulnerabilities
       - name: Run Trivy vulnerability scanner on the repository
-        uses: aquasecurity/trivy-action@master   # Official Trivy GitHub Action
+        uses: aquasecurity/trivy-action@master
         with:
-          scan-type: 'fs'            # 'fs' = filesystem scan (scans files, not a Docker image)
-          scan-ref: '.'              # '.' = scan starting from the root of the repo
-          format: 'table'            # Output results as a human-readable table
-          exit-code: '0'             # '0' = do NOT fail the pipeline if vulnerabilities are found
-                                     # Change to '1' later when you want strict enforcement
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '0'
 
   # ============================================================
   # JOB 3: Argo CD Sync (PLACEHOLDER)
