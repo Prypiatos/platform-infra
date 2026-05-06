@@ -15,4 +15,4 @@ images:
   newTag: b0afa5229084d71964324bdf97c575fdab725238
 - name: sheharakarunarathna/kong
   newName: sheharakarunarathna/kong
-  newTag: latest
+  newTag: 62e8dafc022cb3714843741c4704735e02872f0c
