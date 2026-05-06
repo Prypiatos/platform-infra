@@ -8,8 +8,15 @@ resources:
   - config.yaml
   - postgres-init-configmap.yaml
   - mosquitto-config.yaml
+  - airflow-dags-configmap.yaml
   - postgres.yaml
   - influxdb.yaml
   - kafka.yaml
   - mosquitto.yaml
   - api.yaml
+  - mlflow.yaml
+  - airflow.yaml
+  - streaming.yaml
+  - ingestion.yaml
+  - storage.yaml
+  - anomaly.yaml

@@ -1,0 +1,253 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airflow-dags
+data:
+  data-validation-dag.py: |
+    import logging
+    import pendulum
+
+    from airflow.decorators import dag, task
+
+    from src.validation.postgres_batch_validator import validate_telemetry_batch
+
+
+    @dag(
+        dag_id="data_validation_dag",
+        schedule="@daily",
+        start_date=pendulum.datetime(2024, 1, 1, tz="UTC"),
+        catchup=False,
+        tags=["validation", "great-expectations"],
+    )
+    def data_validation_dag():
+        @task
+        def validate_latest_interval(**context):
+            """validate telemetry data for the latest interval and log the results."""
+            start_time = context["data_interval_start"]
+            end_time = context["data_interval_end"]
+
+            summary = validate_telemetry_batch(start_time, end_time)
+
+            logging.info("Validation summary: %s", summary)
+
+            if summary["failed"] > 0:
+                raise ValueError(f"Telemetry validation failed: {summary}")
+
+            return summary
+
+        validate_latest_interval()
+
+
+    data_validation_dag()
+  energy-batch-pipeline.py: |
+    """
+    Placeholder DAG mount for Kubernetes deployment.
+
+    The upstream Airflow image in this project does not currently include Spark.
+    Keep the DAG present for visibility, but expect batch jobs to require an
+    updated image before successful execution.
+    """
+
+    import logging
+    import os
+    import shlex
+    from datetime import timedelta
+    from pathlib import Path
+
+    import pendulum
+    from airflow import DAG
+    from airflow.operators.bash import BashOperator
+
+    logger = logging.getLogger(__name__)
+
+    REPO_ROOT = Path(
+        os.getenv("ENERGY_REPO_ROOT", str(Path(__file__).resolve().parents[1]))
+    )
+    SPARK_SUBMIT_BIN = os.getenv("SPARK_SUBMIT_BIN", "spark-submit")
+    POSTGRES_JDBC_PACKAGE = os.getenv(
+        "POSTGRES_JDBC_PACKAGE",
+        "org.postgresql:postgresql:42.6.0",
+    )
+
+
+    def spark_submit_command(script_path: str) -> str:
+        return " ".join(
+            [
+                f"cd {shlex.quote(str(REPO_ROOT))}",
+                "&&",
+                shlex.quote(SPARK_SUBMIT_BIN),
+                "--packages",
+                shlex.quote(POSTGRES_JDBC_PACKAGE),
+                shlex.quote(script_path),
+            ]
+        )
+
+
+    default_args = {
+        "owner": "E2_Data_Intelligence",
+        "retries": 2,
+        "retry_delay": timedelta(minutes=5),
+        "start_date": pendulum.datetime(2025, 1, 1, tz="UTC"),
+        "email_on_failure": False,
+        "email_on_retry": False,
+    }
+
+    dag = DAG(
+        "energy_batch_pipeline",
+        default_args=default_args,
+        description="Run daily Spark feature engineering and batch analytics jobs",
+        schedule="0 1 * * *",
+        catchup=False,
+        tags=["E2", "Spark", "batch"],
+    )
+
+    feature_engineering_task = BashOperator(
+        task_id="run_feature_engineering",
+        bash_command=spark_submit_command("src/spark/feature_engineering.py"),
+        dag=dag,
+    )
+
+    batch_analytics_task = BashOperator(
+        task_id="run_batch_analytics",
+        bash_command=spark_submit_command("src/spark/batch-energy-analytics.py"),
+        dag=dag,
+    )
+
+    feature_engineering_task >> batch_analytics_task
+  model-retraining-dag.py: |
+    """
+    Lightweight mounted copy of the model retraining DAG for Kubernetes Airflow.
+
+    It retains the same scheduling and environment assumptions as the compose
+    version. Retraining still depends on the Airflow image carrying the Python
+    source tree, which this deployment expects.
+    """
+
+    import logging
+    import os
+    from datetime import datetime, timedelta
+
+    import pendulum
+    from airflow import DAG
+    from airflow.operators.bash import BashOperator
+    from airflow.operators.python import PythonOperator
+
+    logger = logging.getLogger(__name__)
+
+    POSTGRES_HOST = os.getenv("POSTGRES_HOST", "postgres")
+    POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
+    POSTGRES_USER = os.getenv("POSTGRES_USER", "energy_user")
+    POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "energy_pass")
+    POSTGRES_DB = os.getenv("POSTGRES_DB", "energy_db")
+    MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
+
+
+    def fetch_training_data(**context):
+        import pandas as pd
+        from sqlalchemy import create_engine
+
+        engine = create_engine(
+            f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@"
+            f"{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+        )
+        features_df = pd.read_sql("SELECT * FROM energy_features ORDER BY node_id, timestamp", engine)
+        telemetry_df = pd.read_sql(
+            "SELECT node_id, timestamp, voltage, current, power, energy_wh "
+            "FROM telemetry_readings ORDER BY timestamp",
+            engine,
+        )
+        features_path = "/opt/airflow/data/training_features.csv"
+        telemetry_path = "/opt/airflow/data/training_telemetry.csv"
+        features_df.to_csv(features_path, index=False)
+        telemetry_df.to_csv(telemetry_path, index=False)
+        ti = context["task_instance"]
+        ti.xcom_push(key="features_path", value=features_path)
+        ti.xcom_push(key="telemetry_path", value=telemetry_path)
+        return {"status": "success", "feature_rows": len(features_df), "telemetry_rows": len(telemetry_df)}
+
+
+    def retrain_lstm_model(**context):
+        import mlflow
+        import mlflow.pytorch
+        import numpy as np
+        import pandas as pd
+        import torch
+        from sklearn.preprocessing import MinMaxScaler
+
+        from src.models.forecasting.lstm_model import LSTMForecaster
+
+        features_path = context["task_instance"].xcom_pull(task_ids="fetch_training_data", key="features_path")
+        df = pd.read_csv(features_path)
+        data = df[["avg_power"]].values
+        scaled = MinMaxScaler().fit_transform(data)
+        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+        mlflow.set_experiment("load-forecasting")
+        with mlflow.start_run(run_name=f"lstm_retrain_{datetime.now().strftime('%Y%m%d_%H%M%S')}"):
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            model = LSTMForecaster().to(device)
+            optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+            loss_fn = torch.nn.MSELoss()
+            for i in range(max(len(scaled) - 48, 1)):
+                x = torch.FloatTensor(scaled[i : i + 24]).unsqueeze(0).to(device)
+                y = torch.FloatTensor(scaled[i + 24 : i + 48, 0]).unsqueeze(0).to(device)
+                if y.shape[-1] != 24:
+                    continue
+                pred = model(x)
+                loss = loss_fn(pred, y)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+            mlflow.pytorch.log_model(model, "lstm_model")
+        return {"status": "success"}
+
+
+    def retrain_anomaly_model(**context):
+        import mlflow
+        import pandas as pd
+
+        from src.models.anomaly.model import AnomalyDetector
+        from src.models.anomaly.trainer import _compute_metrics
+
+        telemetry_path = context["task_instance"].xcom_pull(task_ids="fetch_training_data", key="telemetry_path")
+        df = pd.read_csv(telemetry_path)
+        readings = df.to_dict(orient="records")
+        detector = AnomalyDetector(contamination=0.05, n_estimators=100)
+        detector.fit(readings)
+        predictions = detector.predict(readings)
+        metrics = _compute_metrics(predictions)
+        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+        mlflow.set_experiment("anomaly-detection")
+        with mlflow.start_run(run_name=f"anomaly_retrain_{datetime.now().strftime('%Y%m%d_%H%M%S')}"):
+          mlflow.log_metrics(metrics)
+        return {"status": "success", **metrics}
+
+
+    default_args = {
+        "owner": "E2_Data_Intelligence",
+        "depends_on_past": False,
+        "start_date": pendulum.datetime(2025, 1, 1, tz="UTC"),
+        "email_on_failure": False,
+        "email_on_retry": False,
+        "retries": 1,
+        "retry_delay": timedelta(minutes=5),
+    }
+
+    dag = DAG(
+        dag_id="model_retraining_pipeline",
+        default_args=default_args,
+        description="Scheduled pipeline to retrain forecasting and anomaly models",
+        schedule="0 2 * * 1",
+        catchup=False,
+        tags=["E2", "ML", "training", "weekly"],
+    )
+
+    fetch_data = PythonOperator(task_id="fetch_training_data", python_callable=fetch_training_data, dag=dag)
+    retrain_lstm = PythonOperator(task_id="retrain_lstm_model", python_callable=retrain_lstm_model, dag=dag)
+    retrain_anomaly = PythonOperator(task_id="retrain_anomaly_model", python_callable=retrain_anomaly_model, dag=dag)
+    cleanup = BashOperator(
+        task_id="cleanup_temp_files",
+        bash_command="rm -f /opt/airflow/data/training_features.csv /opt/airflow/data/training_telemetry.csv",
+        dag=dag,
+    )
+
+    fetch_data >> [retrain_lstm, retrain_anomaly] >> cleanup

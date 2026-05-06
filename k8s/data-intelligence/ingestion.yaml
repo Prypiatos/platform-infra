@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingestion
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ingestion
+  template:
+    metadata:
+      labels:
+        app: ingestion
+    spec:
+      containers:
+        - name: ingestion
+          image: sheharakarunarathna/e2-ingestion:latest
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: data-intelligence-config
+            - secretRef:
+                name: data-intelligence-secrets

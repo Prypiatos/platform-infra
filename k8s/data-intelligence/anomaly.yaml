@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anomaly
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: anomaly
+  template:
+    metadata:
+      labels:
+        app: anomaly
+    spec:
+      containers:
+        - name: anomaly
+          image: sheharakarunarathna/e2-anomaly:latest
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: data-intelligence-config
+            - secretRef:
+                name: data-intelligence-secrets

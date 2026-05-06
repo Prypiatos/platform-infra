@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streaming
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: streaming
+  template:
+    metadata:
+      labels:
+        app: streaming
+    spec:
+      containers:
+        - name: streaming
+          image: sheharakarunarathna/e2-streaming:latest
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: data-intelligence-config
+            - secretRef:
+                name: data-intelligence-secrets

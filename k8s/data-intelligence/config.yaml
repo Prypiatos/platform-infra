@@ -12,10 +12,13 @@ data:
   KAFKA_BOOTSTRAP_SERVERS: kafka:29092
   MQTT_HOST: mosquitto
   MQTT_PORT: "1883"
+  MLFLOW_TRACKING_URI: http://mlflow:5000
   DOCKER_INFLUXDB_INIT_MODE: setup
   DOCKER_INFLUXDB_INIT_ORG: energy-org
   DOCKER_INFLUXDB_INIT_BUCKET: energy_telemetry
   CORS_ALLOWED_ORIGINS: "*"
+  PYTHONUNBUFFERED: "1"
+  PYTHONPATH: /opt/airflow
 ---
 apiVersion: v1
 kind: Secret
@@ -29,3 +32,4 @@ stringData:
   DOCKER_INFLUXDB_INIT_PASSWORD: admin12345
   DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: energy-token-123
   INFLUXDB_TOKEN: energy-token-123
+  AIRFLOW_ADMIN_PASSWORD: changeme
