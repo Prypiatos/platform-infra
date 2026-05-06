@@ -3,3 +3,4 @@ kind: Kustomization
 
 resources:
   - ingress/ingress-nginx-controller-service.yaml
+  - data-intelligence
