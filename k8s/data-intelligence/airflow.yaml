@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
         - name: airflow
-          image: sheharakarunarathna/e2-airflow:latest
+          image: sheharakarunarathna/e2-airflow:75fff839b40f26815a0a1ff07e64c9f0fdf6751e
           imagePullPolicy: Always
           command:
             - bash

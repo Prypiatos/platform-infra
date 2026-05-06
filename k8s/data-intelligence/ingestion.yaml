@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: ingestion
-          image: sheharakarunarathna/e2-ingestion:latest
+          image: sheharakarunarathna/e2-ingestion:e1b83163e9b1c102c842773e5d571426374f0d27
           imagePullPolicy: Always
           envFrom:
             - configMapRef:

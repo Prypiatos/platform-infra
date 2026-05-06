@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: storage
-          image: sheharakarunarathna/e2-storage:latest
+          image: sheharakarunarathna/e2-storage:5f0ea6671e9e2d11c35e38e9568f73a304573bf6
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
