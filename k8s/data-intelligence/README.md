@@ -35,3 +35,8 @@ Notes:
 - `airflow` is deployed for management parity, but the current upstream image
   still lacks Spark tooling. Its batch DAGs will need an improved image to run
   successfully.
+
+Operational notes:
+
+- MQTT broker access and traffic inspection commands are documented in
+  [MQTT-OPERATIONS.md](./MQTT-OPERATIONS.md).
