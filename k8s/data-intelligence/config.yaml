@@ -18,7 +18,6 @@ data:
   DOCKER_INFLUXDB_INIT_BUCKET: energy_telemetry
   CORS_ALLOWED_ORIGINS: "*"
   PYTHONUNBUFFERED: "1"
-  PYTHONPATH: /opt/airflow
 ---
 apiVersion: v1
 kind: Secret

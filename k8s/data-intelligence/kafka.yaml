@@ -39,6 +39,9 @@ spec:
       labels:
         app: kafka
     spec:
+      # Avoid auto-injected KAFKA_* Service env vars colliding with cp-kafka's
+      # broker configuration environment variables.
+      enableServiceLinks: false
       containers:
         - name: kafka
           image: confluentinc/cp-kafka:7.5.0

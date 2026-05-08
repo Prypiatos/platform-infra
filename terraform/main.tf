@@ -23,16 +23,19 @@ locals {
   # We keep the node definitions in one place so the instance resource stays simple.
   cluster_nodes = {
     control-plane = {
-      role          = "control-plane"
-      instance_type = var.control_plane_instance_type
+      role             = "control-plane"
+      instance_type    = var.control_plane_instance_type
+      root_volume_size = var.control_plane_root_volume_size
     }
     worker-1 = {
-      role          = "worker"
-      instance_type = var.worker_instance_type
+      role             = "worker"
+      instance_type    = var.worker_instance_type
+      root_volume_size = var.worker_root_volume_size
     }
     worker-2 = {
-      role          = "worker"
-      instance_type = var.worker_instance_type
+      role             = "worker"
+      instance_type    = var.worker_instance_type
+      root_volume_size = var.worker_root_volume_size
     }
   }
 
@@ -85,48 +88,48 @@ resource "aws_security_group" "k3s_cluster" {
   # SSH is open from anywhere in this simpler setup.
   # Access is still controlled by your AWS key pair.
   ingress {
-    description = "SSH from anywhere"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description      = "SSH from anywhere"
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
 
   # Web traffic for applications that will later run on the cluster.
   ingress {
-    description = "HTTP from anywhere"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description      = "HTTP from anywhere"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
 
   ingress {
-    description = "HTTPS from anywhere"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description      = "HTTPS from anywhere"
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
 
   ingress {
-    description = "MQTT from anywhere"
-    from_port   = 1883
-    to_port     = 1883
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description      = "MQTT from anywhere"
+    from_port        = 1883
+    to_port          = 1883
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
 
   # Kubernetes API access stays restricted to a trusted IP or network.
   ingress {
-    description = "Kubernetes API from trusted IP/CIDR"
-    from_port   = 6443
-    to_port     = 6443
-    protocol    = "tcp"
+    description      = "Kubernetes API from trusted IP/CIDR"
+    from_port        = 6443
+    to_port          = 6443
+    protocol         = "tcp"
     cidr_blocks      = local.trusted_ip_is_ipv6 ? [] : [var.trusted_ip_cidr]
     ipv6_cidr_blocks = local.trusted_ip_is_ipv6 ? [var.trusted_ip_cidr] : []
   }
@@ -172,6 +175,13 @@ resource "aws_instance" "nodes" {
   subnet_id                   = local.default_subnet_id
   vpc_security_group_ids      = [aws_security_group.k3s_cluster.id]
   associate_public_ip_address = true
+
+  # k3s, container images, and local-path PVCs all consume node disk space.
+  root_block_device {
+    volume_size           = each.value.root_volume_size
+    volume_type           = "gp3"
+    delete_on_termination = true
+  }
 
   tags = merge(local.common_tags, {
     Name = each.key

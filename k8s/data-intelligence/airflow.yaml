@@ -55,6 +55,9 @@ spec:
                 name: data-intelligence-config
             - secretRef:
                 name: data-intelligence-secrets
+          env:
+            - name: PYTHONPATH
+              value: /opt/airflow
           volumeMounts:
             - name: airflow-dags
               mountPath: /opt/airflow/dags

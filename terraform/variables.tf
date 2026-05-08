@@ -10,10 +10,22 @@ variable "control_plane_instance_type" {
   default     = "t3.medium"
 }
 
+variable "control_plane_root_volume_size" {
+  description = "Root EBS volume size in GiB for the k3s control-plane node."
+  type        = number
+  default     = 50
+}
+
 variable "worker_instance_type" {
   description = "EC2 instance type for the k3s worker nodes."
   type        = string
   default     = "t3.large"
+}
+
+variable "worker_root_volume_size" {
+  description = "Root EBS volume size in GiB for the k3s worker nodes."
+  type        = number
+  default     = 80
 }
 
 variable "trusted_ip_cidr" {

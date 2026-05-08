@@ -39,12 +39,15 @@ Defaults:
 
 - `aws_region = "ap-southeast-1"` for Singapore
 - `control_plane_instance_type = "t3.medium"`
+- `control_plane_root_volume_size = 50`
 - `worker_instance_type = "t3.large"`
+- `worker_root_volume_size = 80`
 
 Set:
 
 - `key_pair_name` to the name of an existing AWS EC2 key pair
 - `trusted_ip_cidr` to the public IPv4 or IPv6 CIDR that should be allowed to access the Kubernetes API on port `6443`
+- adjust the root EBS volume sizes if you need more or less local storage for k3s, container images, and `local-path` PVCs
 
 Example:
 
