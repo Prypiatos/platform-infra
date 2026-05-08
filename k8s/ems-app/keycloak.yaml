@@ -44,6 +44,8 @@ spec:
               value: "true"
             - name: KC_PROXY_HEADERS
               value: xforwarded
+            - name: KC_HOSTNAME
+              value: http://47.131.156.141/keycloak
             - name: KC_HTTP_RELATIVE_PATH
               value: /keycloak
           ports:
