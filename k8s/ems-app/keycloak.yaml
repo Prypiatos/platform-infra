@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+spec:
+  type: ClusterIP
+  selector:
+    app: keycloak
+  ports:
+    - name: http
+      port: 8180
+      targetPort: 8180
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:26.0
+          args:
+            - start-dev
+            - --import-realm
+          env:
+            - name: KC_BOOTSTRAP_ADMIN_USERNAME
+              value: admin
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              value: admin
+            - name: KC_HTTP_PORT
+              value: "8180"
+            - name: KC_HEALTH_ENABLED
+              value: "true"
+            - name: KC_METRICS_ENABLED
+              value: "true"
+            - name: KC_PROXY_HEADERS
+              value: xforwarded
+            - name: KC_HTTP_RELATIVE_PATH
+              value: /keycloak
+          ports:
+            - name: http
+              containerPort: 8180
+          volumeMounts:
+            - name: keycloak-realm
+              mountPath: /opt/keycloak/data/import/ems-realm.json
+              subPath: ems-realm.json
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /keycloak/health/ready
+              port: 8180
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /keycloak/health/live
+              port: 8180
+            initialDelaySeconds: 60
+            periodSeconds: 20
+      volumes:
+        - name: keycloak-realm
+          configMap:
+            name: keycloak-realm

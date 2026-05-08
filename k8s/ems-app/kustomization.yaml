@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ems
+
+resources:
+  - namespace.yaml
+  - keycloak-realm-configmap.yaml
+  - kong-configmap.yaml
+  - keycloak.yaml
+  - kong.yaml
+  - frontend.yaml
+  - ingress.yaml
