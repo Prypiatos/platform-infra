@@ -18,8 +18,6 @@ data:
             protocols:
               - http
               - https
-              - ws
-              - wss
 
       - name: keycloak
         url: http://keycloak:8180
