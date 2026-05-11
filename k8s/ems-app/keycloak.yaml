@@ -57,6 +57,9 @@ spec:
             - name: KC_PROXY
               value: edge
 
+            - name: KC_PROXY_HEADERS
+              value: xforwarded
+
             # YOUR NEW AUTH DOMAIN
             - name: KC_HOSTNAME
               value: authems.cse23.org
@@ -66,7 +69,7 @@ spec:
               value: "false"
 
             - name: KC_HOSTNAME_STRICT_HTTPS
-              value: "true"
+              value: "fasle"
 
           ports:
             - name: http

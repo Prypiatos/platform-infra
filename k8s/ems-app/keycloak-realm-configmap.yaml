@@ -7,7 +7,7 @@ data:
     {
       "realm": "ems",
       "enabled": true,
-      "sslRequired": "all",
+      "sslRequired": "external",
       "registrationAllowed": false,
       "loginWithEmailAllowed": true,
       "duplicateEmailsAllowed": false,
