@@ -14,4 +14,4 @@ resources:
 images:
 - name: sheharakarunarathna/frontend
   newName: sheharakarunarathna/frontend
-  newTag: 10e425b43236ab40889b3a0a5104167abb03b447
+  newTag: 83a9e8ffb337fd6ba30db342478bfbd662be7b9a
