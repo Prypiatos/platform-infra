@@ -53,15 +53,15 @@ spec:
             - name: KC_METRICS_ENABLED
               value: "true"
 
-            # IMPORTANT FOR HTTPS + INGRESS
+            # REQUIRED FOR NGINX INGRESS HTTPS
             - name: KC_PROXY
               value: edge
 
-            # IMPORTANT: DOMAIN ONLY
+            # YOUR NEW AUTH DOMAIN
             - name: KC_HOSTNAME
-              value: ems.cse23.org
+              value: authems.cse23.org
 
-            # PREVENT HOSTNAME ISSUES
+            # PREVENT HOSTNAME/IP REDIRECT ISSUES
             - name: KC_HOSTNAME_STRICT
               value: "false"
 
@@ -78,7 +78,6 @@ spec:
               subPath: ems-realm.json
               readOnly: true
 
-          # SIMPLE + RELIABLE PROBES
           readinessProbe:
             tcpSocket:
               port: 8180

@@ -6,8 +6,6 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
     cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
 
 spec:
   ingressClassName: nginx
@@ -21,14 +19,6 @@ spec:
     - host: ems.cse23.org
       http:
         paths:
-          - path: /keycloak
-            pathType: Prefix
-            backend:
-              service:
-                name: kong
-                port:
-                  number: 8000
-
           - path: /py
             pathType: Prefix
             backend:
