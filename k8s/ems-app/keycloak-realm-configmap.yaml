@@ -7,7 +7,7 @@ data:
     {
       "realm": "ems",
       "enabled": true,
-      "sslRequired": "none",
+      "sslRequired": "all",
       "registrationAllowed": false,
       "loginWithEmailAllowed": true,
       "duplicateEmailsAllowed": false,
@@ -41,23 +41,18 @@ data:
           "publicClient": true,
           "standardFlowEnabled": true,
           "directAccessGrantsEnabled": true,
-          "rootUrl": "http://47.131.156.141",
+          "rootUrl": "https://ems.cse23.org",
           "baseUrl": "/",
           "redirectUris": [
-            "http://localhost:3000/*",
-            "http://localhost:8000/*",
-            "http://47.131.156.141/*"
+            "https://ems.cse23.org/*"
           ],
           "webOrigins": [
-            "http://localhost:3000",
-            "http://localhost:8000",
-            "http://47.131.156.141",
-            "+"
+            "https://ems.cse23.org"
           ],
           "protocol": "openid-connect",
           "attributes": {
             "pkce.code.challenge.method": "S256",
-            "post.logout.redirect.uris": "http://localhost:3000/* http://47.131.156.141/*"
+            "post.logout.redirect.uris": "https://ems.cse23.org/*"
           },
           "protocolMappers": [
             {
