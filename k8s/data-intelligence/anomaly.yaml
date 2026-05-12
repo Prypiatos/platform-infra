@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: anomaly
-          image: sheharakarunarathna/e2-anomaly:91854711608e98bad8ccf49bb69e3d50aceaa113
+sheharakarunarathna/e2-anomaly:01d37dc2fa7daa671afc25aac71286221076772b
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
