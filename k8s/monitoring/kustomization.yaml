@@ -8,6 +8,7 @@ resources:
   - prometheus-config.yaml
   - prometheus-deployment.yaml
   - prometheus-service.yaml
+  - grafana-datasource.yaml
   - grafana-deployment.yaml
   - grafana-service.yaml
   - ingress.yaml

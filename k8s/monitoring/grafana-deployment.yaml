@@ -28,6 +28,11 @@ spec:
           volumeMounts:
             - name: grafana-storage
               mountPath: /var/lib/grafana
+            - name: grafana-datasource
+              mountPath: /etc/grafana/provisioning/datasources
       volumes:
         - name: grafana-storage
           emptyDir: {}
+        - name: grafana-datasource
+          configMap:
+            name: grafana-datasource
