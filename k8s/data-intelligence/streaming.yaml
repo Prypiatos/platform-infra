@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: streaming
-sheharakarunarathna/e2-streaming:cf4066cba0962d72e95f3f46be6cd03ad3125cd8
+          image: sheharakarunarathna/e2-streaming:cf4066cba0962d72e95f3f46be6cd03ad3125cd8
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
