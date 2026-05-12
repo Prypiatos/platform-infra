@@ -13,11 +13,11 @@ spec:
 
   tls:
     - hosts:
-        - grafana.ems.cse23.org
+        - grafanaems.cse23.org
       secretName: grafana-tls
 
   rules:
-    - host: grafana.ems.cse23.org
+    - host: grafanaems.cse23.org
       http:
         paths:
           - path: /
