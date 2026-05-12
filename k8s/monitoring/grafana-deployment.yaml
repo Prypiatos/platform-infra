@@ -30,9 +30,19 @@ spec:
               mountPath: /var/lib/grafana
             - name: grafana-datasource
               mountPath: /etc/grafana/provisioning/datasources
+            - name: grafana-dashboard-provider
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: grafana-dashboard-json
+              mountPath: /var/lib/grafana/dashboards
       volumes:
         - name: grafana-storage
           emptyDir: {}
         - name: grafana-datasource
           configMap:
             name: grafana-datasource
+        - name: grafana-dashboard-provider
+          configMap:
+            name: grafana-dashboard-provider
+        - name: grafana-dashboard-json
+          configMap:
+            name: grafana-dashboard-json

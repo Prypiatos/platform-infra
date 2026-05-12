@@ -3,12 +3,21 @@ kind: Kustomization
 
 namespace: data-intelligence-monitoring
 
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: grafana-dashboard-json
+    files:
+      - grafana_dashboard.json
+
 resources:
   - namespace.yaml
   - prometheus-config.yaml
   - prometheus-deployment.yaml
   - prometheus-service.yaml
   - grafana-datasource.yaml
+  - grafana-dashboard-provider.yaml
   - grafana-deployment.yaml
   - grafana-service.yaml
   - ingress.yaml
