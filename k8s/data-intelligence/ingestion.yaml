@@ -16,12 +16,11 @@ spec:
     spec:
       containers:
         - name: ingestion
-sheharakarunarathna/e2-ingestion:cf4066cba0962d72e95f3f46be6cd03ad3125cd8
+          image: sheharakarunarathna/e2-ingestion:cf4066cba0962d72e95f3f46be6cd03ad3125cd8
           imagePullPolicy: Always
 
           envFrom:
             - configMapRef:
                 name: data-intelligence-config
-
             - secretRef:
                 name: data-intelligence-secrets
