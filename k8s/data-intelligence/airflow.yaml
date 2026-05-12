@@ -11,6 +11,7 @@ spec:
       port: 8080
       targetPort: 8080
 ---
+# comment
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
