@@ -17,4 +17,4 @@ data:
       - job_name: 'e2-api'
         metrics_path: /metrics
         static_configs:
-          - targets: ['api:8000']
+          - targets: ['data-intelligence-api.data-intelligence.svc.cluster.local:8000']
