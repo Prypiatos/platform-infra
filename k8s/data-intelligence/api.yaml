@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: sheharakarunarathna/e2-api:5b3d18c66f5cbb98de6f231cd893f3f7e4f4ad9c
+          image: sheharakarunarathna/e2-api:925a4f8b88fdd623d9ade56d54ca415523561ebe
           imagePullPolicy: Always
 
           ports:
