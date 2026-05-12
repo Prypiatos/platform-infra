@@ -31,18 +31,22 @@ metadata:
 spec:
   strategy:
     type: Recreate
+
   replicas: 1
+
   selector:
     matchLabels:
       app: airflow
+
   template:
     metadata:
       labels:
         app: airflow
+
     spec:
       containers:
         - name: airflow
-sheharakarunarathna/e2-airflow:f2b9c94575545be3a305664ff7926149cfeaf7d3
+          image: sheharakarunarathna/e2-airflow:f2b9c94575545be3a305664ff7926149cfeaf7d3
           imagePullPolicy: Always
 
           command:
@@ -69,6 +73,7 @@ sheharakarunarathna/e2-airflow:f2b9c94575545be3a305664ff7926149cfeaf7d3
           envFrom:
             - configMapRef:
                 name: data-intelligence-config
+
             - secretRef:
                 name: data-intelligence-secrets
 
