@@ -10,3 +10,4 @@ resources:
   - prometheus-service.yaml
   - grafana-deployment.yaml
   - grafana-service.yaml
+  - ingress.yaml
