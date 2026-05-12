@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - data-intelligence
   - ems-app
+  - monitoring 
 
 patches:
   - path: ingress/ingress-nginx-controller-service.yaml
