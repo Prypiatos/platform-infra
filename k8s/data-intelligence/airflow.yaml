@@ -10,6 +10,7 @@ spec:
     - name: http
       port: 8080
       targetPort: 8080
+
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -21,59 +22,89 @@ spec:
   resources:
     requests:
       storage: 10Gi
+
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: airflow
 spec:
+  strategy:
+    type: Recreate
+
   replicas: 1
+
   selector:
     matchLabels:
       app: airflow
+
   template:
     metadata:
       labels:
         app: airflow
+
     spec:
       containers:
         - name: airflow
-          image: sheharakarunarathna/e2-airflow:latest
+          image: sheharakarunarathna/e2-airflow:f2b9c94575545be3a305664ff7926149cfeaf7d3
           imagePullPolicy: Always
+
           command:
             - bash
-            - -c
-            - >
-              airflow db init &&
-              airflow users create --username admin --password ${AIRFLOW_ADMIN_PASSWORD}
-              --firstname Admin --lastname User --role Admin --email admin@example.com || true &&
-              airflow webserver & airflow scheduler
+            - -ec
+            - |
+              airflow db init
+
+              airflow users create \
+                --username admin \
+                --password "${AIRFLOW_ADMIN_PASSWORD}" \
+                --firstname Admin \
+                --lastname User \
+                --role Admin \
+                --email admin@example.com || true
+
+              airflow scheduler &
+
+              exec airflow webserver
+
           ports:
             - containerPort: 8080
+
           envFrom:
             - configMapRef:
                 name: data-intelligence-config
+
             - secretRef:
                 name: data-intelligence-secrets
+
+          env:
+            - name: PYTHONPATH
+              value: /opt/airflow
+
           volumeMounts:
             - name: airflow-dags
               mountPath: /opt/airflow/dags
+
             - name: airflow-data
               mountPath: /opt/airflow/data
+
           readinessProbe:
             tcpSocket:
               port: 8080
             initialDelaySeconds: 25
             periodSeconds: 10
+
           livenessProbe:
             tcpSocket:
               port: 8080
             initialDelaySeconds: 45
             periodSeconds: 20
+
       volumes:
         - name: airflow-dags
           configMap:
             name: airflow-dags
+
         - name: airflow-data
           persistentVolumeClaim:
             claimName: airflow-data

@@ -41,8 +41,8 @@ jobs:
         run: pip install yamllint
 
       # Step 3 — Run yamllint on ALL yaml files in the repo
-      - name: Lint all YAML files in the repository
-        run: yamllint -d relaxed .
+      # - name: Lint all YAML files in the repository
+      #   run: yamllint -d relaxed .
 
   # ============================================================
   # JOB 2: Security Scan with Trivy

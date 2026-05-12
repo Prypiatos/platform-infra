@@ -4,6 +4,9 @@ metadata:
   name: kafka
 spec:
   type: ClusterIP
+  # Single-node Kafka needs to resolve its own controller listener before the
+  # readiness probe marks the pod ready.
+  publishNotReadyAddresses: true
   selector:
     app: kafka
   ports:
@@ -39,6 +42,9 @@ spec:
       labels:
         app: kafka
     spec:
+      # Avoid auto-injected KAFKA_* Service env vars colliding with cp-kafka's
+      # broker configuration environment variables.
+      enableServiceLinks: false
       containers:
         - name: kafka
           image: confluentinc/cp-kafka:7.5.0
@@ -52,7 +58,7 @@ spec:
             - name: KAFKA_PROCESS_ROLES
               value: broker,controller
             - name: KAFKA_CONTROLLER_QUORUM_VOTERS
-              value: 1@kafka:9093
+              value: 1@localhost:9093
             - name: KAFKA_LISTENERS
               value: PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
             - name: KAFKA_ADVERTISED_LISTENERS
@@ -72,22 +78,35 @@ spec:
           volumeMounts:
             - name: kafka-data
               mountPath: /var/lib/kafka/data
+          startupProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - kafka-broker-api-versions --bootstrap-server localhost:29092
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 30
           readinessProbe:
             exec:
               command:
                 - sh
                 - -c
                 - kafka-broker-api-versions --bootstrap-server localhost:29092
-            initialDelaySeconds: 20
+            initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 6
           livenessProbe:
             exec:
               command:
                 - sh
                 - -c
                 - kafka-broker-api-versions --bootstrap-server localhost:29092
-            initialDelaySeconds: 40
+            initialDelaySeconds: 20
             periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 6
       volumes:
         - name: kafka-data
           persistentVolumeClaim:

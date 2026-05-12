@@ -3,3 +3,11 @@ kind: Kustomization
 
 resources:
   - data-intelligence
+  - ems-app
+
+patches:
+  - path: ingress/ingress-nginx-controller-service.yaml
+    target:
+      kind: Service
+      name: ingress-nginx-controller
+      namespace: ingress-nginx

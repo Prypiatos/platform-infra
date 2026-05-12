@@ -7,17 +7,21 @@ spec:
   selector:
     matchLabels:
       app: ingestion
+
   template:
     metadata:
       labels:
         app: ingestion
+
     spec:
       containers:
         - name: ingestion
-          image: sheharakarunarathna/e2-ingestion:latest
+          image: sheharakarunarathna/e2-ingestion:a3656fb43dd7502f09b8171b4b391d04d0061ce7
           imagePullPolicy: Always
+
           envFrom:
             - configMapRef:
                 name: data-intelligence-config
+
             - secretRef:
                 name: data-intelligence-secrets

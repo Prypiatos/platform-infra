@@ -13,6 +13,7 @@ resources:
   - influxdb.yaml
   - kafka.yaml
   - mosquitto.yaml
+  - mosquitto-external.yaml
   - api.yaml
   - mlflow.yaml
   - airflow.yaml

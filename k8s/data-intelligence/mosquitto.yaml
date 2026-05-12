@@ -55,8 +55,10 @@ spec:
           image: eclipse-mosquitto:2
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 1883
-            - containerPort: 9001
+            - name: mqtt
+              containerPort: 1883
+            - name: websockets
+              containerPort: 9001
           volumeMounts:
             - name: mosquitto-data
               mountPath: /mosquitto/data

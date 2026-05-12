@@ -10,6 +10,7 @@ spec:
     - name: http
       port: 8000
       targetPort: 8000
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -17,31 +18,39 @@ metadata:
   name: data-intelligence-api
 spec:
   replicas: 1
+
   selector:
     matchLabels:
       app: data-intelligence-api
+
   template:
     metadata:
       labels:
         app: data-intelligence-api
+
     spec:
       containers:
         - name: api
-          image: sheharakarunarathna/e2-api:91854711608e98bad8ccf49bb69e3d50acea113
+          image: sheharakarunarathna/e2-api:925a4f8b88fdd623d9ade56d54ca415523561ebe
           imagePullPolicy: Always
+
           ports:
             - containerPort: 8000
+
           envFrom:
             - configMapRef:
                 name: data-intelligence-config
+
             - secretRef:
                 name: data-intelligence-secrets
+
           readinessProbe:
             httpGet:
               path: /health
               port: 8000
             initialDelaySeconds: 20
             periodSeconds: 10
+
           livenessProbe:
             httpGet:
               path: /health
