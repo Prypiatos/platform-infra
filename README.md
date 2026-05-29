@@ -90,4 +90,10 @@ kubectl get svc -n mqtt
 
 - Do not store secrets directly in Git
 - Terraform and Ansible prepare the cluster
-- The current deployment assets in this repo are plain Kubernetes manifests
+- The current deployment assets in this repo are plain Kubernetes manifest
+
+  # Project Architecture
+
+  <img width="934" height="584" alt="image" src="https://github.com/user-attachments/assets/39b4eab3-9c6b-4e8e-9eda-44a582479bf4" />
+
+  
